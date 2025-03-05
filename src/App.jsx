@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
 import Places from "./components/Places.jsx";
 import { AVAILABLE_PLACES } from "./data.js";
@@ -7,11 +7,14 @@ import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
 import logoImg from "./assets/logo.png";
 import { sortPlacesByDistance } from "./loc.js";
 
-const selectedIdsOfPlaces = JSON.parse(localStorage.getItem("selectdPlaces") || []);
-const storedPlaces = AVAILABLE_PLACES.filter((place) => selectedIdsOfPlaces.includes(place.id));
+const selectedIdsOfPlaces = JSON.parse(
+  localStorage.getItem("selectdPlaces") || []
+);
+const storedPlaces = AVAILABLE_PLACES.filter((place) =>
+  selectedIdsOfPlaces.includes(place.id)
+);
 
 function App() {
-
   const modal = useRef();
   const selectedPlace = useRef();
   const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
@@ -27,12 +30,11 @@ function App() {
   useEffect(() => {
     // navigator: 브라우저가 제공하는 API로, 사용자의 위치 정보를 가져올 수 있다.
     navigator.geolocation.getCurrentPosition((position) => {
-
-      // 현재 위치를 기준으로 하여 가까운 이미지순으로 정렬한다. 
+      // 현재 위치를 기준으로 하여 가까운 이미지순으로 정렬한다.
       const sortedPlaces = sortPlacesByDistance(
         AVAILABLE_PLACES,
-        position.coords.latitude,   // 위도
-        position.coords.longitude   // 경도
+        position.coords.latitude, // 위도
+        position.coords.longitude // 경도
       );
       setAvailablePlaces(sortedPlaces);
     });
@@ -70,25 +72,30 @@ function App() {
       return [place, ...prevPickedPlaces];
     });
 
-    // 선택된 사진을 로컬스토리지에 저장한다. 
+    // 선택된 사진을 로컬스토리지에 저장한다.
     const sortedIds = JSON.parse(localStorage.getItem("selectdPlaces")) || [];
     if (sortedIds.indexOf(id) === -1) {
-      localStorage.setItem("selectdPlaces", JSON.stringify([ id, ...sortedIds]));
+      localStorage.setItem("selectdPlaces", JSON.stringify([id, ...sortedIds]));
     }
-
   }
 
-  // 사진 제거 함수
-  function handleRemovePlace() {
-    setPickedPlaces((prevPickedPlaces) =>
-      prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
-    );
-    setModalIsOpen(false);
+  // useCallback()
+  // 함수가 재생성되지 않게하고, 메모리에 저장하여 함수 재사용
+  const handleRemovePlace = useCallback(
+    // 사진 제거 함수
+    function handleRemovePlace() {
+      setPickedPlaces((prevPickedPlaces) =>
+        prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
+      );
+      setModalIsOpen(false);
 
-    // 선택된 사진을 로컬스토리지에서 제거한다.
-    const storedIds = JSON.parse(localStorage.getItem("selectdPlaces")) || [];
-    localStorage.setItem("selectdPlaces", JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current)));
-  }
+      // 선택된 사진을 로컬스토리지에서 제거한다.
+      const storedIds = JSON.parse(localStorage.getItem("selectdPlaces")) || [];
+      localStorage.setItem(
+        "selectdPlaces",
+        JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current))
+      );
+    }, []);
 
   return (
     <>
